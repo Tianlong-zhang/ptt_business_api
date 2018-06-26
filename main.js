@@ -37,11 +37,11 @@ app.use(bodyParser.urlencoded({            //此项必须在 bodyParser.json 下
 app.get('/', function (req, res) {
 	contract.methods.say().call().then(function(result){
 		let data = {
+			status: "success",
 			data: result
 		}
-		res.send(req.query.name)
-		// res.send(ipfs)
-		// res.send(JSON.stringify(data))
+		// res.send(req.query.name)
+		res.send(JSON.stringify(data))
 	});
 })
 
