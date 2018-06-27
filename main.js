@@ -36,14 +36,12 @@ app.use(bodyParser.urlencoded({            //此项必须在 bodyParser.json 下
 }));
  
 app.get('/', function (req, res) {
-	let get = axiosFunc.get('http://ums.analytab.net/api/business/match_items/', {name: "kana"})
-	let post = axiosFunc.post('http://ums.analytab.net/api/business/users/login', {name: "kana"})
+	axiosFunc.get('http://ums.analytab.net/api/business/match_items/', {name: "kana"})
+	axiosFunc.post('http://ums.analytab.net/api/business/users/login', {name: "kana"})
 	contract.methods.say().call().then(function(result){
 		let data = {
 			status: "success",
 			data: result,
-			get: get,
-			post: post
 		}
 		// res.send(req.query.name)
 		res.send(JSON.stringify(data))
