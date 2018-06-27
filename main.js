@@ -1,9 +1,10 @@
-var express = require('express');
-var Web3 = require("web3");
-var bodyParser = require('body-parser');
-const ipfsFile = require('./ipfsFile');
+const express = require("express");
+const Web3 = require("web3");
+const bodyParser = require("body-parser");
+const ipfsFile = require("./ipfsFile");
+const axiosFunc = require("./axiosFunction")
 
-var web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:8545"));
+const web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:8545"));
 web3.eth.defaultAccount = web3.eth.accounts[0];
 
 var abi = [
@@ -35,10 +36,14 @@ app.use(bodyParser.urlencoded({            //此项必须在 bodyParser.json 下
 }));
  
 app.get('/', function (req, res) {
+	let get = axiosFunc.get('http://ums.analytab.net/api/business/match_items/', {name: "kana"})
+	let post = axiosFunc.post('http://ums.analytab.net/api/business/users/login', {name: "kana"})
 	contract.methods.say().call().then(function(result){
 		let data = {
 			status: "success",
-			data: result
+			data: result,
+			get: get,
+			post: post
 		}
 		// res.send(req.query.name)
 		res.send(JSON.stringify(data))
