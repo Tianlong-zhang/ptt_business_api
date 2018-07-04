@@ -3,6 +3,7 @@ const Web3 = require("web3");
 const bodyParser = require("body-parser");
 const ipfsFile = require("./ipfsFile");
 const axiosFunc = require("./axiosFunction")
+const User = require('./database/UserModel')
 
 const web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:8545"));
 web3.eth.defaultAccount = web3.eth.accounts[0];
@@ -32,12 +33,22 @@ var contract = new web3.eth.Contract(abi,address);
 var app = express();
 app.use(bodyParser.json({limit: '1mb'}));  //body-parser 解析json格式数据
 app.use(bodyParser.urlencoded({            //此项必须在 bodyParser.json 下面,为参数编码
-  extended: true
+  	extended: true
 }));
  
 app.get('/', function (req, res) {
-	axiosFunc.get('http://ums.analytab.net/api/business/match_items/', {name: "kana"})
-	axiosFunc.post('http://ums.analytab.net/api/business/users/login', {name: "kana"})
+	User.findAddress(req.query.address).then(function(user) {
+		console.log('****************************');
+		if (user) {
+			console.log('user id : ', user.id);
+			console.log('user address : ', user.address);
+		} else {
+			console.log("didn't find");
+		}
+	})
+	
+	// axiosFunc.get('http://ums.analytab.net/api/business/match_items/', {name: "kana"})
+	// axiosFunc.post('http://ums.analytab.net/api/business/users/login', {name: "kana"})
 	contract.methods.say().call().then(function(result){
 		let data = {
 			status: "success",
