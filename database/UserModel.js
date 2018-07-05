@@ -18,6 +18,10 @@ var User = sequelize.define('user', {
     email: {
         type: Sequelize.STRING
     },
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    deletedAt: 'deleted_at',
+    paranoid: true,
 }, {
     freezeTableName: false
 });
