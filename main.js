@@ -135,3 +135,18 @@ var server = app.listen(8888, function () {
 	console.log("访问地址为 http://localhost:" + port)
 })
 
+//操作文件
+// let addPath = "./test.txt";
+// let getPath = "./storage/get/onepiece.jpg";
+// let buff = fs.readFileSync(addPath);
+// ipfsFile.add(buff).then((hash)=>{
+//     console.log(hash);
+//     console.log("http://localhost:8080/ipfs/"+hash);
+//     return ipfsFile.get(hash);
+// }).then((buff)=>{
+//     fs.writeFileSync(getPath,buff);
+//     console.log("file:"+getPath);
+// }).catch((err)=>{
+//     console.log(err);
+// })
+>>>>>>> 80b62333f510b7599ed477a0c300ff27285a4cc4
