@@ -1,85 +1,137 @@
 var express = require('express');
-var Web3 = require("web3");
 var bodyParser = require('body-parser');
+var Web3 = require("web3");
+
+const axios = require("axios")
 const ipfsFile = require('./ipfsFile');
 
-var web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:8545"));
+web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:7445"));  
 web3.eth.defaultAccount = web3.eth.accounts[0];
 
-var abi = [
-	{
-		"constant": false,
-		"inputs": [{"name":"_msg","type":"string"}],
-		"name": "set","outputs":[],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	}, {
-		"constant": true,
-		"inputs": [],
-		"name": "say",
-		"outputs": [{"name":"","type":"string"}],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	}
-];
+var abi=[{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"},{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}];
 
-var address = '0xaaa71c94e9daacabb740cb4730fbd6706072e2bd';
-var contract = new web3.eth.Contract(abi,address);
+var abi_permission=[{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hash","type":"string"}],"name":"UploadEvent","type":"event"},{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"dataid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"}];
+
+var address = '0xb480127414e9a330b8d6bb8ff55f4f915bed1615';
+var address_permission = '0x04a35435b29aba3bfc2a82eb074dc3158bb82944';
+
+var pool_contract = web3.eth.contract(abi);
+var pool = pool_contract.at(address);
+
+var permission_contract = web3.eth.contract(abi_permission);
+var permission = pool_contract.at(address_permission);
 
 var app = express();
-app.use(bodyParser.json({limit: '1mb'}));  //body-parser 解析json格式数据
-app.use(bodyParser.urlencoded({            //此项必须在 bodyParser.json 下面,为参数编码
+app.use(bodyParser.json({limit: '1mb'}));
+app.use(bodyParser.urlencoded({           
   extended: true
 }));
- 
-app.get('/', function (req, res) {
-	contract.methods.say().call().then(function(result){
-		let data = {
-			status: "success",
-			data: result
-		}
-		// res.send(req.query.name)
-		res.send(JSON.stringify(data))
-	});
-})
 
-//POST 请求
-app.post('/api/v1/users_upload', function (req, res) {
-    if (req.body.data) {
-		//能正确解析 json 格式的post参数
-		//操作内容
-		let buff = Buffer.from(JSON.stringify(req.body.data));
-		ipfsFile.add(buff).then((hash)=>{
-			res.send({"status": "success", "name": req.body.data.name, "gender": req.body.data.gender, "hash": hash});
-		}).catch((err)=>{
-			//上传失败
-			console.log(err);
-			res.send({"status":"upload error"});
-		})
-    } else {
-        //不能正确解析json 格式的post参数
-		res.send({"status":"error"});
-    }
+//创建账号
+app.post('/account', function (req, res) {
+	var phone = req.body.phone; //电话
+	var password = req.body.password; //电话+随机数
+	var account_new = web3.personal.newAccount(password);
+	if (account_new) {
+		res.send({"phone": phone, "password": password, "address": account_new});
+	}
 });
+
+
+app.post('/upload', function (req, res) {
+
+	console.log(req.body);
+
+	//上传ipfs
+	let buff = Buffer.from(JSON.stringify(req.body.hash));
+	ipfsFile.add(buff).then((rhash)=>{
+		console.log('ipfs upload success');
+		console.log('ipfs hash: ' + rhash);
+		console.log('ipfs address: http://ipfs.analytab.net/ipfs/' + rhash);
+
+		var g_address = req.body.address;
+		
+		//设置地址
+		//web3.eth.defaultAccount = g_address;
+		//
+
+		var newstr = rhash.split("").reverse().join("");
+
+		var hash = '';
+		pool.upload.sendTransaction(req.body.dataid, newstr, {gas:200000}, function(error, result) {
+			hash = result;
+			res.send(hash.toString());
+		});
+
+		var upload = pool.UploadEvent();
+		upload.watch(function(error, result) {
+			if (!error) {
+			//	if (result.transactionHash == hash) {
+
+					console.log("address: " + g_address);
+					console.log("dataid: " + result.args.dataid);
+					console.log("hashid: " + result.args.hashid);
+					console.log("txhash: " + result.transactionHash);
+					console.log("txhash address: http://p1.analytab.net:9000/#/transaction/" + result.transactionHash);
+
+					axios.post('http://ums.analytab.net/api/vendor/data/record',  {
+								address: g_address,
+								txhash: result.transactionHash,
+								dataid: result.args.dataid,
+								hashid: result.args.hashid 
+					}).then(function(response){
+						console.log('success');
+					}).catch(function(err){
+						console.log(err);
+					});
+
+
+			//	} else {
+			//		console.log(result.transactionHash);	
+			//		console.log("hashid: " + result.args.hashid);
+			//	} 
+			//
+			} else {
+				console.log(error);
+			}
+		});
+
+	}).catch((err)=>{
+		console.log(err);
+	})
+
+});
+
+app.get('/gethashcount', function (req, res) {
+
+	pool.getHashCount(function(error, result){
+	    if(!error)
+	    {
+			var result = result.toNumber();
+			res.send(result.toString());
+		} else {
+			console.error(error);
+		}
+	});
+
+});
+
+app.get('/gethash/:summaryid', function (req, res) {
+	var dataid = req.params.summaryid;
+	pool.getHash(dataid, function(error, result){
+	    if(!error)
+	    {
+			res.send(result.toString());
+		} else {
+			console.error(error);
+		}
+	});
+
+});
+
 
 var server = app.listen(8888, function () {
 	var port = server.address().port
 	console.log("访问地址为 http://localhost:" + port)
 })
 
-//操作文件
-// let addPath = "./test.txt";
-// let getPath = "./storage/get/onepiece.jpg";
-// let buff = fs.readFileSync(addPath);
-// ipfsFile.add(buff).then((hash)=>{
-//     console.log(hash);
-//     console.log("http://localhost:8080/ipfs/"+hash);
-//     return ipfsFile.get(hash);
-// }).then((buff)=>{
-//     fs.writeFileSync(getPath,buff);
-//     console.log("file:"+getPath);
-// }).catch((err)=>{
-//     console.log(err);
-// })

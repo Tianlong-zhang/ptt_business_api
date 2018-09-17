@@ -1,5 +1,7 @@
-var Say = artifacts.require("./Say.sol");
+var pool = artifacts.require("./Pool.sol");
+var permission = artifacts.require("./Permission.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(Say);
+  deployer.deploy(pool);
+  deployer.deploy(permission);
 };

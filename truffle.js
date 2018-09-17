@@ -17,16 +17,16 @@ module.exports = {
   // to customize your Truffle configuration!
 	networks: {
 		development: {
-			host: "47.96.117.14", 
-			port: 8545,
+			host: "127.0.0.1", 
+			port: 7445,
 			network_id: "*",
 			gas: 4612388
 		},
 		live: {
-			host: "47.96.117.14", 
-			port: 8545,
-			network_id: 1986,
-			gas: 461238
+			host: "178.128.38.209", 
+			port: 9545,
+			network_id: 37773,
+			gas: 7500000
 		}
 
 	}
