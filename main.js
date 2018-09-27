@@ -5,27 +5,93 @@ var Web3 = require("web3");
 const axios = require("axios")
 const ipfsFile = require('./ipfsFile');
 
-web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:7445"));  
-web3.eth.defaultAccount = web3.eth.accounts[0];
+//web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:7445"));  
+web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:9545"));  
+//web3.eth.defaultAccount = web3.eth.accounts[0];
+web3.eth.defaultAccount = '0x7c8d77649791d9b063d9c9492fd62eeca9aa6577';
 
-var abi=[{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"},{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}];
+var abi=[{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"}];
 
-var abi_permission=[{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hash","type":"string"}],"name":"UploadEvent","type":"event"},{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"dataid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"}];
+var abi_track=[{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"}];
 
-var address = '0xb480127414e9a330b8d6bb8ff55f4f915bed1615';
-var address_permission = '0x04a35435b29aba3bfc2a82eb074dc3158bb82944';
+
+var address = '0x25469449ccb07b77bb1cfe7d8583542e6248cc07';
+var address_track = '0x772e9877ed6477fb6d6ff23a0befe745f8d1d929';
 
 var pool_contract = web3.eth.contract(abi);
 var pool = pool_contract.at(address);
 
-var permission_contract = web3.eth.contract(abi_permission);
-var permission = pool_contract.at(address_permission);
+var pool_contract_track = web3.eth.contract(abi_track);
+var pool_track = pool_contract_track.at(address_track);
+
 
 var app = express();
 app.use(bodyParser.json({limit: '1mb'}));
 app.use(bodyParser.urlencoded({           
   extended: true
 }));
+
+app.post('/track', function (req, res) {
+
+	//上传ipfs
+	let buff = Buffer.from(JSON.stringify(req.body.content));
+	ipfsFile.add(buff).then((rhash)=>{
+		console.log('ipfs upload success');
+		console.log('ipfs hash: ' + rhash);
+		//console.log('ipfs address: http://ipfs.analytab.net/ipfs/' + rhash);
+        console.log('ipfs address: http://localhost/ipfs/' + rhash);
+		var hash = '';
+			
+		var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
+		if (account_status) {
+			console.log('unlock success');	
+		}
+
+		pool_track.upload.sendTransaction(req.body.dataid, rhash, {gas:200000}, function(error, result) {
+			hash = result;
+			res.send(hash.toString());
+		});
+		
+		var upload = pool_track.UploadEvent();
+		upload.watch(function(error, result) {
+			if (!error) {
+					console.log("dataid: " + result.args.dataid);
+					console.log("txhash: " + result.transactionHash);
+
+					axios.post('http://ums.proton.global/api/v1/track_node_call',  {
+								txhash: result.transactionHash,
+								dataid: result.args.dataid,
+					}).then(function(response){
+						console.log('success');
+					}).catch(function(err){
+						console.log(err);
+					});
+			} else {
+				console.log(error);
+			}
+		});
+
+	}).catch((err)=>{
+		console.log(err);
+	})
+
+});
+
+app.get('/track/:summaryid', function (req, res) {
+	var dataid = req.params.summaryid;
+	pool_track.getHash(dataid, function(error, result){
+	    if(!error)
+	    {
+			res.send(result.toString());
+		} else {
+			console.error(error);
+		}
+	});
+
+});
+
+
+
 
 //创建账号
 app.post('/account', function (req, res) {
@@ -47,7 +113,7 @@ app.post('/upload', function (req, res) {
 	ipfsFile.add(buff).then((rhash)=>{
 		console.log('ipfs upload success');
 		console.log('ipfs hash: ' + rhash);
-		console.log('ipfs address: http://ipfs.analytab.net/ipfs/' + rhash);
+		console.log('ipfs address: http://127.0.0.1/ipfs/' + rhash);
 
 		var g_address = req.body.address;
 		
@@ -55,14 +121,18 @@ app.post('/upload', function (req, res) {
 		//web3.eth.defaultAccount = g_address;
 		//
 
-		var newstr = rhash.split("").reverse().join("");
+		var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
+		if (account_status) {
+			console.log('unlock success');	
+		}
 
+		var newstr = rhash.split("").reverse().join("");
 		var hash = '';
+
 		pool.upload.sendTransaction(req.body.dataid, newstr, {gas:200000}, function(error, result) {
 			hash = result;
-			res.send(hash.toString());
+			res.send(hash);
 		});
-
 		var upload = pool.UploadEvent();
 		upload.watch(function(error, result) {
 			if (!error) {
@@ -74,7 +144,7 @@ app.post('/upload', function (req, res) {
 					console.log("txhash: " + result.transactionHash);
 					console.log("txhash address: http://p1.analytab.net:9000/#/transaction/" + result.transactionHash);
 
-					axios.post('http://ums.analytab.net/api/vendor/data/record',  {
+					axios.post('http://ums.proton.global/api/vendor/data/record',  {
 								address: g_address,
 								txhash: result.transactionHash,
 								dataid: result.args.dataid,
@@ -101,6 +171,20 @@ app.post('/upload', function (req, res) {
 	})
 
 });
+
+app.get('/download', function (req, res) {
+
+	pool.downloadContent(function(error, result){
+	    if(!error)
+	    {
+			res.send(result.toString());
+		} else {
+			console.error(error);
+		}
+	});
+
+});
+
 
 app.get('/gethashcount', function (req, res) {
 
@@ -135,18 +219,4 @@ var server = app.listen(8888, function () {
 	console.log("访问地址为 http://localhost:" + port)
 })
 
-//操作文件
-// let addPath = "./test.txt";
-// let getPath = "./storage/get/onepiece.jpg";
-// let buff = fs.readFileSync(addPath);
-// ipfsFile.add(buff).then((hash)=>{
-//     console.log(hash);
-//     console.log("http://localhost:8080/ipfs/"+hash);
-//     return ipfsFile.get(hash);
-// }).then((buff)=>{
-//     fs.writeFileSync(getPath,buff);
-//     console.log("file:"+getPath);
-// }).catch((err)=>{
-//     console.log(err);
-// })
->>>>>>> 80b62333f510b7599ed477a0c300ff27285a4cc4
+
