@@ -58,7 +58,7 @@ app.post('/track', function (req, res) {
 					//console.log("dataid: " + result.args.dataid);
 					//console.log("txhash: " + result.transactionHash);
 
-					axios.post('http://127.0.0.1/api/v1/track_node_call',  {
+					axios.post('http://ums.proton.global/api/v1/track_node_call',  {
 								txhash: result.transactionHash,
 								dataid: result.args.dataid,
 					}).then(function(response){
