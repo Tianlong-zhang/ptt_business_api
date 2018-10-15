@@ -36,15 +36,15 @@ app.post('/track', function (req, res) {
 	//上传ipfs
 	let buff = Buffer.from(JSON.stringify(req.body.content));
 	ipfsFile.add(buff).then((rhash)=>{
-		console.log('ipfs upload success');
-		console.log('ipfs hash: ' + rhash);
+		//console.log('ipfs upload success');
+		//console.log('ipfs hash: ' + rhash);
 		//console.log('ipfs address: http://ipfs.analytab.net/ipfs/' + rhash);
         console.log('ipfs address: http://localhost/ipfs/' + rhash);
 		var hash = '';
 			
 		var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
 		if (account_status) {
-			console.log('unlock success');	
+		//	console.log('unlock success');	
 		}
 
 		pool_track.upload.sendTransaction(req.body.dataid, rhash, {gas:200000}, function(error, result) {
@@ -55,14 +55,14 @@ app.post('/track', function (req, res) {
 		var upload = pool_track.UploadEvent();
 		upload.watch(function(error, result) {
 			if (!error) {
-					console.log("dataid: " + result.args.dataid);
-					console.log("txhash: " + result.transactionHash);
+					//console.log("dataid: " + result.args.dataid);
+					//console.log("txhash: " + result.transactionHash);
 
 					axios.post('http://ums.proton.global/api/v1/track_node_call',  {
 								txhash: result.transactionHash,
 								dataid: result.args.dataid,
 					}).then(function(response){
-						console.log('success');
+					//	console.log('success');
 					}).catch(function(err){
 						console.log(err);
 					});
