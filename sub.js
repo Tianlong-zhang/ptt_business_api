@@ -14,6 +14,7 @@ var pool_track = pool_contract_track.at(address_track);
 
 var client = Redis.createClient(6379, '127.0.0.1', {connect_timeout: 30});
 var brpop = function() {
+    console.log('brpop')
     client.brpop("anchor:test:channel", 5, function(err, response) {
         if(response) {
             let value = JSON.parse(response[1]);
