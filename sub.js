@@ -41,7 +41,7 @@ var brpop = function() {
                 upload.watch(function(error, result) {
                     if (!error) {
                         // console.log("dataid: " + result.args.dataid);
-                        console.log("txhash: " + result.transactionHash);
+                        // console.log("txhash: " + result.transactionHash);
                         axios.post('http://ums.proton.global/api/v1/track_node_call',  {
                             txhash: result.transactionHash,
                             dataid: result.args.dataid,
