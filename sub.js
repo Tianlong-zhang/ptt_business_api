@@ -33,7 +33,8 @@ var brpop = function() {
                 var hash = '';
                 pool_track.upload.sendTransaction(value.data_id, rhash, {gas:200000}, function(error, result) {
                     hash = result;
-                    res.send(hash.toString());
+                    console.log(hash.toString());
+                    // res.send(hash.toString());
                 });
                 
                 var upload = pool_track.UploadEvent();
