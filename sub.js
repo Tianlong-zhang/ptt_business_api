@@ -2,6 +2,24 @@ var Redis = require('redis');
 var Web3 = require("web3");
 const axios = require("axios")
 const ipfsFile = require('./ipfsFile');
+const crypto = require('crypto');
+
+// 秘钥
+var key = 'Password!';
+// 加密函数
+function aesEncrypt(data, key) {
+    const cipher = crypto.createCipher('aes192', key);
+    var crypted = cipher.update(data, 'utf8', 'hex');
+    crypted += cipher.final('hex');
+    return crypted;
+}
+// 解密函数
+function aesDecrypt(encrypted, key) {
+    const decipher = crypto.createDecipher('aes192', key);
+    var decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
 
 web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:9545"));  
 web3.eth.defaultAccount = '0x7c8d77649791d9b063d9c9492fd62eeca9aa6577';
@@ -21,9 +39,13 @@ var brpop = function() {
             let buff = Buffer.from(JSON.stringify(value.content));
             ipfsFile.add(buff).then((rhash)=>{
                 // console.log('ipfs upload success');
-                console.log('ipfs hash: ' + rhash);
                 // console.log('ipfs address: http://ipfs.analytab.net/ipfs/' + rhash);
                 // console.log('ipfs address: http://localhost/ipfs/' + rhash);
+
+                console.log('ipfs hash: ' + rhash);
+                // 加密ipfs hash
+                var rhash = aesEncrypt(rhash, key);
+                console.log('encrypt ipfs hash: ' + rhash);
                 
                 var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
                 if (account_status) {
