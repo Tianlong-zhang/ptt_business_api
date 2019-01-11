@@ -32,7 +32,6 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.post('/track', function (req, res) {
-
 	//上传ipfs
 	let buff = Buffer.from(JSON.stringify(req.body.content));
 	ipfsFile.add(buff).then((rhash)=>{
@@ -41,40 +40,35 @@ app.post('/track', function (req, res) {
 		//console.log('ipfs address: http://ipfs.analytab.net/ipfs/' + rhash);
         console.log('ipfs address: http://localhost/ipfs/' + rhash);
 		var hash = '';
-			
 		var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
 		if (account_status) {
 		//	console.log('unlock success');	
 		}
-
 		pool_track.upload.sendTransaction(req.body.dataid, rhash, {gas:200000}, function(error, result) {
 			hash = result;
 			res.send(hash.toString());
 		});
-		
 		var upload = pool_track.UploadEvent();
-
 		upload.watch(function(error, result) {
 			if (!error) {
-					//console.log("dataid: " + result.args.dataid);
-					console.log("txhash: " + result.transactionHash);
-					axios.post('http://ums.proton.global/api/v1/track_node_call',  {
-								txhash: result.transactionHash,
-								dataid: result.args.dataid,
-					}).then(function(response){
-					//	console.log('success');
-					}).catch(function(err){
-						console.log(err);
-					});
+				//console.log("dataid: " + result.args.dataid);
+				console.log("txhash: " + result.transactionHash);
+				axios.post('http://ums.proton.global/api/v1/track_node_call',  {
+					txhash: result.transactionHash,
+					dataid: result.args.dataid,
+				}).then(function(response){
+					console.log('success');
+					upload.stopWatching();
+				}).catch(function(err){
+					console.log(err);
+				});
 			} else {
 				console.log(error);
 			}
 		});
-
 	}).catch((err)=>{
 		console.log(err);
 	})
-
 });
 
 app.get('/track/:summaryid', function (req, res) {
@@ -87,11 +81,7 @@ app.get('/track/:summaryid', function (req, res) {
 			console.error(error);
 		}
 	});
-
 });
-
-
-
 
 //创建账号
 app.post('/account', function (req, res) {
@@ -105,30 +95,22 @@ app.post('/account', function (req, res) {
 
 
 app.post('/upload', function (req, res) {
-
 	console.log(req.body);
-
 	//上传ipfs
 	let buff = Buffer.from(JSON.stringify(req.body.hash));
 	ipfsFile.add(buff).then((rhash)=>{
 		console.log('ipfs upload success');
 		console.log('ipfs hash: ' + rhash);
 		console.log('ipfs address: http://127.0.0.1/ipfs/' + rhash);
-
 		var g_address = req.body.address;
-		
 		//设置地址
 		//web3.eth.defaultAccount = g_address;
-		//
-
 		var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
 		if (account_status) {
 			console.log('unlock success');	
 		}
-
 		var newstr = rhash.split("").reverse().join("");
 		var hash = '';
-
 		pool.upload.sendTransaction(req.body.dataid, newstr, {gas:200000}, function(error, result) {
 			hash = result;
 			res.send(hash);
@@ -137,25 +119,22 @@ app.post('/upload', function (req, res) {
 		upload.watch(function(error, result) {
 			if (!error) {
 			//	if (result.transactionHash == hash) {
-
-					console.log("address: " + g_address);
-					console.log("dataid: " + result.args.dataid);
-					console.log("hashid: " + result.args.hashid);
-					console.log("txhash: " + result.transactionHash);
-					console.log("txhash address: http://p1.analytab.net:9000/#/transaction/" + result.transactionHash);
-
-					axios.post('http://ums.proton.global/api/vendor/data/record',  {
-								address: g_address,
-								txhash: result.transactionHash,
-								dataid: result.args.dataid,
-								hashid: result.args.hashid 
-					}).then(function(response){
-						console.log('success');
-					}).catch(function(err){
-						console.log(err);
-					});
-
-
+				console.log("address: " + g_address);
+				console.log("dataid: " + result.args.dataid);
+				console.log("hashid: " + result.args.hashid);
+				console.log("txhash: " + result.transactionHash);
+				console.log("txhash address: http://p1.analytab.net:9000/#/transaction/" + result.transactionHash);
+				axios.post('http://ums.proton.global/api/vendor/data/record',  {
+							address: g_address,
+							txhash: result.transactionHash,
+							dataid: result.args.dataid,
+							hashid: result.args.hashid 
+				}).then(function(response){
+					console.log('success');
+					upload.stopWatching();
+				}).catch(function(err){
+					console.log(err);
+				});
 			//	} else {
 			//		console.log(result.transactionHash);	
 			//		console.log("hashid: " + result.args.hashid);
@@ -165,11 +144,9 @@ app.post('/upload', function (req, res) {
 				console.log(error);
 			}
 		});
-
 	}).catch((err)=>{
 		console.log(err);
 	})
-
 });
 
 app.get('/download', function (req, res) {
