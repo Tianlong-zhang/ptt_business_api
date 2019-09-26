@@ -16,8 +16,8 @@ var abi=[{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":
 var abi_track=[{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"}];
 
 
-var address = config.mainJsAddress;
-var address_track = config.mainJsAddressTrack;
+var address = config.poolAddress;
+var address_track = config.poolAddressTrack;
 
 var pool_contract = web3.eth.contract(abi);
 var pool = pool_contract.at(address);
@@ -54,7 +54,7 @@ app.post('/track', function (req, res) {
 			if (!error) {
 				//console.log("dataid: " + result.args.dataid);
 				console.log("txhash: " + result.transactionHash);
-				axios.post(config.mainJsFuncCallbackHost + '/api/v1/track_node_call',  {
+				axios.post(config.callbackHost + '/api/v1/track_node_call',  {
 					txhash: result.transactionHash,
 					dataid: result.args.dataid,
 				}).then(function(response){
@@ -125,7 +125,7 @@ app.post('/upload', function (req, res) {
 				console.log("hashid: " + result.args.hashid);
 				console.log("txhash: " + result.transactionHash);
 				console.log("txhash address: http://p1.analytab.net:9000/#/transaction/" + result.transactionHash);
-				axios.post(config.mainJsFuncCallbackHost + '/api/vendor/data/record',  {
+				axios.post(config.callbackHost + '/api/vendor/data/record',  {
 							address: g_address,
 							txhash: result.transactionHash,
 							dataid: result.args.dataid,
