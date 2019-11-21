@@ -70,7 +70,7 @@ var brpop = function () {
                             txhash: result.transactionHash,
                             dataid: result.args.dataid
                         }).then(function (response) {
-                            console.log(response)
+                            // console.log(response)
                             upload.stopWatching()
                         }).catch(function (err) {
                             console.log(err)
