@@ -1,4 +1,5 @@
-const ganache = require("ganache-core");
+//测试环境module
+//const ganache = require("ganache-core");
 var Web3 = require("web3");
 
 var config = function () {
