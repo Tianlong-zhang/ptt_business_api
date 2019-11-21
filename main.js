@@ -74,10 +74,11 @@ app.post('/track', function (req, res) {
 
 app.get('/track/:summaryid', function (req, res) {
 	var dataid = req.params.summaryid;
-	pool_track.getHash(dataid, function(error, result){
+	console.log('hash => ' + dataid);
+	web3.eth.getTransaction(dataid, function(error, result){
 	    if(!error)
 	    {
-			res.send(result.toString());
+			res.send(result.input);
 		} else {
 			console.error(error);
 		}
