@@ -191,6 +191,21 @@ app.get('/gethash/:summaryid', function (req, res) {
 
 });
 
+app.get('/tx/:txhash', function (req, res) {
+	var tx = req.params.txhash;
+	web3.eth.getTransaction(tx, function(error, result){
+	    if(!error)
+	    {
+			res.writeHead(200, {
+				'Content-Type': 'application/json'
+			});
+			res.end(JSON.stringify(result));
+		} else {
+			console.error(error);
+		}
+	});
+
+});
 
 var server = app.listen(8888, function () {
 	var port = server.address().port
