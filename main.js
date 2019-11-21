@@ -1,22 +1,23 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var Web3 = require("web3");
+var config = new(require('./config.js'))();
 
 const axios = require("axios")
 const ipfsFile = require('./ipfsFile');
 
 //web3 = new Web3(new Web3.providers.HttpProvider("http://47.96.117.14:7445"));  
-web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:9545"));  
+web3 = new Web3(config.provider);  
 //web3.eth.defaultAccount = web3.eth.accounts[0];
-web3.eth.defaultAccount = '0x7c8d77649791d9b063d9c9492fd62eeca9aa6577';
+web3.eth.defaultAccount = config.defaultAccount;
 
 var abi=[{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"}];
 
 var abi_track=[{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"}];
 
 
-var address = '0x25469449ccb07b77bb1cfe7d8583542e6248cc07';
-var address_track = '0x772e9877ed6477fb6d6ff23a0befe745f8d1d929';
+var address = config.poolAddress;
+var address_track = config.poolAddressTrack;
 
 var pool_contract = web3.eth.contract(abi);
 var pool = pool_contract.at(address);
@@ -40,7 +41,7 @@ app.post('/track', function (req, res) {
 		//console.log('ipfs address: http://ipfs.analytab.net/ipfs/' + rhash);
         console.log('ipfs address: http://localhost/ipfs/' + rhash);
 		var hash = '';
-		var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
+		var account_status = web3.personal.unlockAccount(config.defaultAccount, config.defaultAccountPassword);
 		if (account_status) {
 		//	console.log('unlock success');	
 		}
@@ -53,7 +54,7 @@ app.post('/track', function (req, res) {
 			if (!error) {
 				//console.log("dataid: " + result.args.dataid);
 				console.log("txhash: " + result.transactionHash);
-				axios.post('http://ums.proton.global/api/v1/track_node_call',  {
+				axios.post(config.callbackHost + '/api/v1/track_node_call',  {
 					txhash: result.transactionHash,
 					dataid: result.args.dataid,
 				}).then(function(response){
@@ -105,7 +106,7 @@ app.post('/upload', function (req, res) {
 		var g_address = req.body.address;
 		//设置地址
 		//web3.eth.defaultAccount = g_address;
-		var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
+		var account_status = web3.personal.unlockAccount(config.defaultAccount, config.defaultAccountPassword);
 		if (account_status) {
 			console.log('unlock success');	
 		}
@@ -124,7 +125,7 @@ app.post('/upload', function (req, res) {
 				console.log("hashid: " + result.args.hashid);
 				console.log("txhash: " + result.transactionHash);
 				console.log("txhash address: http://p1.analytab.net:9000/#/transaction/" + result.transactionHash);
-				axios.post('http://ums.proton.global/api/vendor/data/record',  {
+				axios.post(config.callbackHost + '/api/vendor/data/record',  {
 							address: g_address,
 							txhash: result.transactionHash,
 							dataid: result.args.dataid,

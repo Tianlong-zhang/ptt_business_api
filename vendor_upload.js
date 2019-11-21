@@ -3,7 +3,6 @@ var Web3 = require("web3");
 const axios = require("axios")
 const ipfsFile = require('./ipfsFile');
 const crypto = require('crypto');
-var config = new(require('./config.js'))();
 
 // 秘钥
 var key = 'Password!';
@@ -22,11 +21,11 @@ function aesDecrypt(encrypted, key) {
     return decrypted;
 }
 
-web3 = new Web3(config.provider);  
-web3.eth.defaultAccount = config.defaultAccount;
+web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:9545"));  
+web3.eth.defaultAccount = '0x7c8d77649791d9b063d9c9492fd62eeca9aa6577';
 
 var abi_track=[{"constant":false,"inputs":[{"name":"dataid","type":"uint256"},{"name":"hash","type":"string"}],"name":"upload","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"hashid","type":"uint256"}],"name":"getHash","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getHashCount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"dataid","type":"uint256"},{"indexed":false,"name":"hashid","type":"uint256"}],"name":"UploadEvent","type":"event"}];
-var address_track = config.poolAddressTrack;
+var address_track = '0x772e9877ed6477fb6d6ff23a0befe745f8d1d929';
 
 var pool_contract_track = web3.eth.contract(abi_track);
 var pool_track = pool_contract_track.at(address_track);
@@ -34,7 +33,7 @@ var pool_track = pool_contract_track.at(address_track);
 var client = Redis.createClient(6379, '127.0.0.1', {connect_timeout: 30});
 var brpop = function() {
     console.log('brpop')
-    client.brpop("anchor:test:channel", 5, function(err, response) {
+    client.brpop("anchor:vendor_upload:channel", 5, function(err, response) {
         if(response) {
             let value = JSON.parse(response[1]);
             let buff = Buffer.from(JSON.stringify(value.content));
@@ -48,7 +47,7 @@ var brpop = function() {
                 var rhash = aesEncrypt(rhash, key);
                 console.log('encrypt ipfs hash: ' + rhash);
                 
-                var account_status = web3.personal.unlockAccount(config.defaultAccount, config.defaultAccountPassword);
+                var account_status = web3.personal.unlockAccount("0x7c8d77649791d9b063d9c9492fd62eeca9aa6577", 'ptt123456');
                 if (account_status) {
                     // console.log('unlock success');
                 }
@@ -65,7 +64,7 @@ var brpop = function() {
                     if (!error) {
                         // console.log("dataid: " + result.args.dataid);
                         // console.log("txhash: " + result.transactionHash);
-                        axios.post(config.callbackHost + '/api/v1/track_node_call',  {
+                        axios.post('http://ums.proton.global/api/v1/track_node_call',  {
                             txhash: result.transactionHash,
                             dataid: result.args.dataid,
                         }).then(function(response){
